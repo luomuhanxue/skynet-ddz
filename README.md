@@ -1,2 +1,3 @@
 # skynet-ddz
-websocket skynet game server
+
+斗地主测试服务器基于skynet的websocket
