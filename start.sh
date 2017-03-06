@@ -1,7 +1,6 @@
 #!/bin/sh
 export ROOT=$(cd `dirname $0`; pwd)
-export TEMP_DIR=$(cd `dirname $ROOT`; pwd)
-export SKYNET_ROOT=$(cd `dirname $TEMP_DIR`; pwd)
+export SKYNET_ROOT=$(cd `dirname $ROOT`; pwd)
 export DAEMON=false
 
 echo $ROOT
