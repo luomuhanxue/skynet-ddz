@@ -10,7 +10,6 @@ function Poke:init()
 	local arr = {}
 	for i = 1,13 do
 		for j = 1,4 do
-			skynet.error((i-1)*4+j+47)
 			arr[#arr + 1] = string.char((i-1) * 4 + j + 47)
 		end
 	end
@@ -33,18 +32,10 @@ function Poke:random()
 		local idx = random(27)
 		arr[i],arr[27+idx] = arr[27+idx],arr[i]
 	end
-	skynet.error("-----------------------")
-	for k,v in pairs(arr) do skynet.error(k,v) end
-	skynet.error("-----------------------")
 	for i = 1,54 do
 		local idx = random(54)
-		print(idx)
 		arr[i],arr[idx] = arr[idx],arr[i]
 	end
-	--skynet.error("-------2----------------")
-	--for k,v in pairs(arr) do skynet.error(k,v) end
-	--skynet.error("-----------------------")
-
 end
 
 --发牌
@@ -54,7 +45,6 @@ function Poke:sendCards()
 	local idx = 1
 	for j = 1,17 do
 		for i = 1,3 do
-			skynet.error(idx,cards[idx])
 			playerCards[i][j] = cards[idx]
 			idx = idx + 1
 		end

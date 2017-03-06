@@ -7,10 +7,10 @@ local is_start		--游戏是否开始
 local game_logic	--游戏逻辑
 local game_cb		--游戏逻辑适配层
 local agents = {}	--连入的客户端
+local prepares={}	--玩家准备
 local max = 3		--最大人数
 local room_id		--房间id号（从1开始）
 local count = 0		--房间进入的玩家数量
-local prepares={}	--玩家准备
 
 --玩家进入房间
 function CMD.enter(agent)
@@ -83,9 +83,9 @@ end
 function CMD.exit(agent,room_pos)
 	skynet.error("room exit",agent)
 	count = count - 1
-	local user_info = skynet.call(agent,"lua","info")
 	agents[room_pos] = nil
 	prepares[room_pos] = false
+	local user_info = skynet.call(agent,"lua","info")
 	user_info.rf="exit"
 	for k,v in pairs(agents) do
 		skynet.call(v,"lua","update_room",user_info)

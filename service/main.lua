@@ -16,6 +16,7 @@ end
 function handler.on_message(ws, msg)
 	skynet.error("-->",msg)
 	local data = json.decode(msg)
+	if not data then ws:send_text[[{"c":-1} ]] end --数据格式错误
 	if data.c == 1 then
 		local addr = skynet.newservice("agent")
 		agents_addr_ws[addr]=ws
@@ -37,8 +38,10 @@ function handler.on_error(ws, msg)
 	local addr = agents_ws_addr[ws]
 	agents_ws_addr[ws] = nil
 	agents_addr_ws[addr] = nil
-	skynet.call(addr,"lua","disconnect")
-    -- do not need close.
+	if addr then
+		skynet.call(addr,"lua","disconnect")
+	end
+	-- do not need close.
     -- ws:close()
 end
 

@@ -76,6 +76,7 @@ function CMD.disconnect()
 	if room then
 		room_addr = nil
 		skynet.call(room_manager_addr,"lua","exit_room",room,room_pos,skynet.self())
+		room = nil
 	end
 	skynet.error("agent exit")
 	skynet.exit()
