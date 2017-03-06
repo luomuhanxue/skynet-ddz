@@ -59,9 +59,16 @@ function Poke:playCard(card,playerId)
 
 end
 
---切换玩家
-function Poke:nextPlayer()
+function Poke:initStart()
+	
+end
 
+--切换玩家
+function Poke:next()
+	if self.game_over then return end
+	if self:initStart() then --开始前的准备
+
+	end
 end
 
 --重新开始
@@ -73,6 +80,10 @@ end
 function Poke:start()
 	self:random()
 	self:sendCards()
+end
+
+function Poke:setStartI(zid)
+	self._current_idx = zid
 end
 
 function Poke:addGameEvent(handle)

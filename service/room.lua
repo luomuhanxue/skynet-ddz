@@ -11,7 +11,7 @@ local prepares={}	--玩家准备
 local max = 3		--最大人数
 local room_id		--房间id号（从1开始）
 local count = 0		--房间进入的玩家数量
-
+local zhuang_idx= 1 --每次房间坐庄的人id
 --玩家进入房间
 function CMD.enter(agent)
 	skynet.error("enter room:",agent)
@@ -107,6 +107,13 @@ function CMD.prepare(pos,p)
 	if pcount == 3 then
 		is_start = true
 		game_logic:start()
+		game_logic:setStartId(zhuang_idx)
+		skynet.fork(function()
+			while true do
+				game_logic:next()
+				skynet.sleep(1500)
+			end
+		end)
 	end
 	return true
 end

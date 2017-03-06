@@ -1,5 +1,5 @@
 app_root = "$ROOT/"
-skynet_root = "$SKYNET_ROOT/skynet/" --app_root.."../skynet/"
+skynet_root = "$SKYNET_ROOT/skynet/" 
 
 server_info = "0.0.0.0:7799"
 
