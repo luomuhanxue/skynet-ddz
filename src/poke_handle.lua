@@ -3,18 +3,20 @@ local PokeHandle= {}
 local game_mt={__index=PokeHandle}
 --设置回调更多的自定义事件
 function PokeHandle:sendCards(pidx,cards)
-	self.msg2one(pidx,"send_cards",cards)
-end
---玩家出牌
-function PokeHandle:playerPlay()
-
+	self.msg2one(pidx,1,cards)
 end
 
---玩家退出
-function PokeHandle:playerExit()
-
+function PokeHandle:askScore( pidx )
+	self.msg2one(pidx,2)
 end
 
+function PokeHandle:play( pidx )
+	self.msg2one(pidx,3)
+end
+
+function PokeHandle:sendLordCards( lordIdx,cards )
+	self.msg2all(1, {lord=lordIdx, cards=cards})
+end
 
 function PokeHandle.new(all_event,one_event)
 	local instance = {
