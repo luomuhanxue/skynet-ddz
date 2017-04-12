@@ -31,7 +31,7 @@ end
 
 function PokeServer:initCards( )
 	self._game_status = 1		--游戏进度
-	self._landlord = {}			--地主牌
+	self._landlordCards = {}			--地主牌
 	self._current_idx = 1		--当前玩家
 	self._landlord_idx = nil	--地主id
 	self._ask_times = 0			--叫地主次数
@@ -69,7 +69,7 @@ function PokeServer:start(  )
 	self._game_status = 1
 	self._cancel = cancelable_timeout(100,function()
 		self:sendCards()
-		self:gameLoop(1)			--10秒不叫则取消切换到下个人
+		self:gameLoop(2)			--10秒不叫则取消切换到下个人
 	end)
 end
 
@@ -83,9 +83,9 @@ function PokeServer:sendCards( )
 		playerCards[3][j] = cards[idx+2]
 		idx = idx + 3
 	end
-	self._landlord[1] = cards[52]
-	self._landlord[2] = cards[53]
-	self._landlord[3] = cards[54]
+	self._landlordCards[1] = cards[52]
+	self._landlordCards[2] = cards[53]
+	self._landlordCards[3] = cards[54]
 	local showArr = {}
 	for i = 1,3 do
 		local isShow,card_info = self._users[i]:setCards(playerCards[i])
@@ -108,6 +108,17 @@ function PokeServer:gameLoop(ti)
 	end)
 end
 
+function PokeServer:sendLandlordCards()
+	local cards = tconcat(self._landlordCards,"")
+	for i = 1,3 do
+		if self._users[i] then
+			self._users[i]:sendLandlordCards({p=self._landlord_idx,cards=cards})
+		end
+	end
+	self._current_idx = self._landlord_idx
+	--self:gameLoop(2)
+end
+
 function PokeServer:playerNotDo()
 	if self._game_status == 1 then
 		self._game_status = 2
@@ -117,7 +128,6 @@ function PokeServer:playerNotDo()
 		if self._landlord_idx == nil then
 			if self._ask_times == 3 then  --3次没人叫地主
 				--没人叫 重新开始
-				skynet.error("no body")
 				self:start()
 				return 
 			end
@@ -129,35 +139,63 @@ function PokeServer:playerNotDo()
 			local next_idx = self._current_idx + 1
 			if next_idx == 4 then next_idx = 1 end
 			if self._ask_times == 3 and 
-				self._landlord_idx == next_idx then	
+				self._landlord_idx == self._first_landlord_idx then	
 				--地主为最开始的人
-				skynet.error("ssssss")
+				skynet.error("地主是:",self._landlord_idx)
+				self:sendLandlordCards()
 				return 
 			end
 			if self._ask_times == 4 then
 				--最开始的人不抢回地主
-				skynet.error("aaaaaa")
+				skynet.error("地主是:",self._landlord_idx)
+				self:sendLandlordCards()
 				return
 			end
 			self._current_idx = next_idx
 			return self:askLandlord(nil,info)
 		end
-	else
+	elseif self._game_status == 3 then
+		--超时未出牌托管自动出
+		if self._max_cidx then	
+			if self._max_cidx == self._current_idx then  --改玩家牌很大没人要
+
+			else	--出牌
+				local cards = self._users:getDefaultCards(self._play_cards)
+				if cards then
+
+				end
+			end
+		else
+			self._max_cidx = self._current_idx	--记录每回合开始出牌的玩家
+			local cards = self._users:getDefaultCards(nil)
+			self._play_cards = {}	
+		end
 		
+		local info = {p=self._current_idx,status=0} --默认不叫,不抢
+		local next_idx = self._current_idx + 1
+		if next_idx == 4 then next_idx = 1 end
+		return self:askPlay(nil,info)
 	end
 end
 
---发送叫地主通知或者回应
+function PokeServer:askPlay(pos,info)
+	local wait_time = 25
 
+	return wait_time
+end
+
+--发送叫地主通知或者回应
 function PokeServer:askLandlord(pos,info)
-	local ask_time_out = 10
+	local ask_time_out = 15
 	self._ask_times = self._ask_times + 1
 	local users = self._users
 	for i = 1,#users do
-		if i == pos then
-			users[i]:askLandlord(self._current_idx,info,ask_time_out)	
-		else
-			users[i]:otherAskLandlord(self._current_idx,info,ask_time_out)
+		if users[i] then
+			if i == pos then
+				users[i]:askLandlord(self._current_idx,info,ask_time_out)	
+			else
+				users[i]:otherAskLandlord(self._current_idx,info,ask_time_out)
+			end
 		end
 	end
 	return ask_time_out
@@ -167,11 +205,41 @@ end
 function PokeServer:handleEvent(cmd,pos,data)
 	if pos == self._current_idx then
 		if cmd == 51 then 			--叫地主
+			self._cancel()			--取消定时器
+			if data.status ~= 0 then
+				if not self._landlord_idx then
+					self._first_landlord_idx = pos --记录第一个人叫地主的位置
+				end
+				self._landlord_idx = pos
+			end
 			local info = {p=pos,status = data.status}
-			local next_idx = pos + 1
-			if next_idx == 4 then next_idx = 1 end
-			self._current_idx = next_idx
-			self:askLandlord(next_idx,info)
+			local next_idx
+			if self._ask_times == 3 then --一轮结束看是否需要继续抢
+				if self._landlord_idx == nil then --三个人都不叫重新发牌
+					self:start()
+					return
+				end
+				if self._landlord_idx ~= self._first_landlord_idx then	--地主有争议由最初叫地主的最后一抢
+					self._current_idx = self._first_landlord_idx
+					next_idx = self._first_landlord_idx
+				else
+					---结束
+					skynet.error("地主是:",self._landlord_idx)
+					self:sendLandlordCards()
+					return
+				end
+			elseif self._ask_times == 4 then --最终抢
+				--确定地主位置
+				skynet.error("地主是:",self._landlord_idx)
+				self:sendLandlordCards()
+				return
+			else
+				next_idx = pos + 1
+				if next_idx == 4 then next_idx = 1 end
+				self._current_idx = next_idx
+			end
+			local sec = self:askLandlord(pos,info)
+			self:gameLoop(sec+1)
 		elseif cmd == 52 then 		--出牌
 	
 		elseif cmd == 53 then 		

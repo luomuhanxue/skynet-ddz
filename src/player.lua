@@ -97,10 +97,20 @@ function M:sendCards(others)
 end
 
 function M:askLandlord(npos,info,time)
-	send_msg(self.fd,{c=51,np = npos,d = info})
+	send_msg(self.fd,{c=51,f = 1,p = npos,d = info,t=time})
 end
 function M:otherAskLandlord(pos,info,time)
-	send_msg(self.fd,{c=3002,p = pos, d = info})	
+	send_msg(self.fd,{c=3002,p = pos, d = info,t=time})	
+end
+function M:sendLandlordCards(data)
+	send_msg(self.fd,{c=3003,d = data})
+end
+--------------------------------------------------------
+function M:play()
+
+end
+function M:otherPlay()
+
 end
 -----------------------------------------
 

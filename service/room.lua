@@ -70,10 +70,11 @@ skynet.register_protocol{
 				f(t.c,t.d)
 			end
 		else 					--游戏逻辑
-			if game and t.data then
-				local pos = uid_pos[t.data.uid]
+			if game and t.d then
+				local pos = uid_pos[t.d.uid]
+				skynet.error(pos)
 				if pos then
-					game:handleEvent(t.c,pos,t.data)
+					game:handleEvent(t.c,pos,t.d)
 				end
 			end
 		end
