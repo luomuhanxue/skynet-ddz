@@ -49,8 +49,8 @@ skynet.start(function()
 		port=3306,
 		database="ddz",
 		user="root",
-		password="123456",
-		--password="ztf123456789ha",
+		--password="123456",
+		password="ztf123456789ha",
 		max_packet_size = 1024*1024,
 		on_connect = on_connect
 	})

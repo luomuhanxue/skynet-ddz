@@ -1,6 +1,8 @@
 local skynet = require "skynet"
 local websocket = require"websocket"
 local json = require "cjson"
+local PlayerCards = require"PlayerCards"
+local CardLogicHandle = require"CardLogicHandle"
 local function send_msg(fd,msg)
 	local json_str = json.encode(msg)
 	skynet.error("room: send--->",json_str,#json_str,fd)
@@ -82,6 +84,7 @@ end
 -----------------------------------------
 function M:setCards(cards)
 	self._cards = cards
+	self._player_cards = PlayerCards.new(cards)	
 	if self.show then
 		return true,{cards = table.concat(cards,""),pos = self.pos}
 	end
@@ -102,14 +105,63 @@ end
 function M:otherAskLandlord(pos,info,time)
 	send_msg(self.fd,{c=3002,p = pos, d = info,t=time})	
 end
+function M:setLandlordCards(cards)
+	self._player_cards:addLandlordCards(cards)
+end
 function M:sendLandlordCards(data)
 	send_msg(self.fd,{c=3003,d = data})
 end
 --------------------------------------------------------
-function M:play()
-
+function M:getDefaultCards()
+	local card = self._player_cards:getDefaultCard()
+	local is_win = self._player_cards:playCards(card)
+	return is_win,{
+		card[1].char,1,card[1].num,1,1
+	}
 end
-function M:otherPlay()
+
+function M:checkCards(cards,type_info)
+	local card_arr = self._player_cards:checkCards(cards)
+	if not card_arr then return nil end
+	local is_win
+	local ctype,num,len,count =	CardLogicHandle:getCardType(cards)
+	skynet.error("my----->",ctype,num,len,count)
+	if ctype == 15 then		--王炸
+		is_win = self._player_cards:playCards(card_arr)
+		return is_win,{cards,ctype,num,len,count}
+	end
+	if type_info then
+		skynet.error("last--->",type_info[2],type_info[3],type_info[4],type_info[5])
+		if ctype == 14 and ctype > type_info[2] then --炸弹炸其他牌
+			is_win = self._player_cards:playCards(card_arr)
+			return is_win,{cards,ctype,num,len,count}
+		end
+		if ctype == type_info[2] and num > type_info[3] 
+			and len==type_info[4] and count == type_info[5] then	--本类型的牌比较
+
+			is_win = self._player_cards:playCards(card_arr)
+			return is_win,{cards,ctype,num,len,count}
+		else
+			--不符合要求
+			return nil
+		end
+	else
+		is_win = self._player_cards:playCards(card_arr)
+		return is_win,{cards,ctype,num,len,count}
+	end
+end
+
+function M:getCardsByInfo(info)
+end
+
+function M:play(npos,info,time)
+	send_msg(self.fd,{c=52,f = 1,p = npos,d = info,t=time})
+end
+function M:otherPlay(pos,info,time)
+	send_msg(self.fd,{c=3004,p = pos,d = info,t=time})
+end
+
+function M:gameOver()
 
 end
 -----------------------------------------
